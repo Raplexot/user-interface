@@ -1,7 +1,7 @@
 <template>
   <div class="app flex flex-col min-h-screen">
     <Header />
-    <main class="flex-grow">
+    <main class="flex-grow p-8">
       <RouterView />
     </main>
     <Footer />
@@ -29,6 +29,5 @@ main {
   justify-content: center;
   align-items: center;
   background-color: rgba(84, 84, 84, 1);
-
 }
 </style>
