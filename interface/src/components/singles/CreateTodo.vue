@@ -57,7 +57,7 @@ const addTodo = async () => {
   }
   .btn {
     padding: 0.5rem 1rem;
-    background-color: #3182ce;
+    background-color: #519945;
     color: white;
     border: none;
     border-radius: 0.25rem;
@@ -66,6 +66,6 @@ const addTodo = async () => {
     transition: background-color 0.2s;
   }
   .btn:hover {
-    background-color: #225ea8;
+    background-color: #57a848;
   }
   </style>

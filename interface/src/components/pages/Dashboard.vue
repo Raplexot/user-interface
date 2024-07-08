@@ -15,7 +15,7 @@
         <p class="user-data">{{ user.phone }}</p>
       </div>
     </div>
-      <CreateTodo @todo-added="addTodoToList" />
+    <CreateTodo @todo-added="addTodoToList" />
     <div>
       <h2 class="text-white text-xl font-bold">Todo List</h2>
       <div class="flex gap-4 justify-center my-4">
@@ -35,8 +35,8 @@
           class="form-input"
         />
       </div>
-      <ul class="bg-white p-4 rounded">
-        <li v-for="todo in filteredTodos" :key="todo.id" class="flex gap-2 mt-2 items-center">
+      <ul class="custom-scrollbar bg-white p-4 rounded overflow-y-scroll" style="max-height: 400px;">
+        <li v-for="todo in filteredTodos" :key="todo.id" class="flex gap-2 mt-2 items-center" >
           <label class="custom-checkbox">
             <input type="checkbox" v-model="todo.completed" />
             <span class="checkmark"></span>
@@ -59,24 +59,46 @@ import CreateTodo from '../singles/CreateTodo.vue'
 import StarIcon from '../icons/StarIcon.vue'
 import useHandleError from '../../composables/useHandleError'
 
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+interface Todo {
+  userId: number;
+  id: number;
+  title: string;
+  completed: boolean;
+}
+
 const route = useRoute()
 const router = useRouter()
 
-const user = ref(null)
-const todos = ref([])
+const user = ref<User | null>(null)
+const todos = ref<Todo[]>([])
 const statusFilter = ref('all')
 const userIdFilter = ref('all')
 const searchTerm = ref('')
-const favoriteTodos = ref([])
+const favoriteTodos = ref<number[]>([])
 
 const fetchUserData = async (userId: string) => {
-  const { data } = await axios.get(`https://jsonplaceholder.typicode.com/users/${userId}`)
-  user.value = data
+  try {
+    const { data } = await axios.get<User>(`https://jsonplaceholder.typicode.com/users/${userId}`)
+    user.value = data
+  } catch (error) {
+    useHandleError().handleCurrentError(router, error as string)
+  }
 }
 
 const fetchTodos = async () => {
-  const { data } = await axios.get('https://jsonplaceholder.typicode.com/todos')
-  todos.value = data
+  try {
+    const { data } = await axios.get<Todo[]>('https://jsonplaceholder.typicode.com/todos')
+    todos.value = data
+  } catch (error) {
+    useHandleError().handleCurrentError(router, error as string)
+  }
 }
 
 onMounted(async () => {
@@ -85,20 +107,16 @@ onMounted(async () => {
     useHandleError().handleCurrentError(router, 'No user provided')
     return
   }
-  try {
-    await fetchUserData(userId)
-    await fetchTodos()
-  } catch (error) {
-    console.log('🚀 ~ onMounted ~ error:', error)
-    useHandleError().handleCurrentError(router, error as string)
-  }
+  await fetchUserData(userId)
+  await fetchTodos()
+
   const storedFavorites = localStorage.getItem('favoriteTodos')
   if (storedFavorites) {
     favoriteTodos.value = JSON.parse(storedFavorites)
   }
 })
 
-const addTodoToList = (todo) => {
+const addTodoToList = (todo: Todo) => {
   todos.value.push(todo)
 }
 
@@ -110,17 +128,17 @@ const filteredTodos = computed(() => {
   return todos.value.filter(todo => {
     return (
       (statusFilter.value === 'all' || (statusFilter.value === 'completed' && todo.completed) || (statusFilter.value === 'uncompleted' && !todo.completed)) &&
-        (userIdFilter.value === 'all' || todo.userId === userIdFilter.value) &&
+        (userIdFilter.value === 'all' || todo.userId === parseInt(userIdFilter.value)) &&
         todo.title.toLowerCase().includes(searchTerm.value.toLowerCase())
     )
   })
 })
 
-const isFavorite = (todoId) => {
+const isFavorite = (todoId: number) => {
   return favoriteTodos.value.includes(todoId)
 }
 
-const toggleFavorite = (todoId) => {
+const toggleFavorite = (todoId: number) => {
   if (isFavorite(todoId)) {
     favoriteTodos.value = favoriteTodos.value.filter(id => id !== todoId)
   } else {
@@ -131,12 +149,36 @@ const toggleFavorite = (todoId) => {
 </script>
 
 <style scoped>
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #519945 #F5F5F5;
+}
 
-.dashboard{
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #F5F5F5;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #519945;
+  border-radius: 10px;
+  border: 2px solid #F5F5F5;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #519945;
+}
+
+.dashboard {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
+
 .custom-checkbox {
   display: inline-block;
   position: relative;
@@ -168,7 +210,7 @@ const toggleFavorite = (todoId) => {
 }
 
 .custom-checkbox input:checked ~ .checkmark {
-  background-color: #3182ce;
+  background-color: #519945;
 }
 
 .checkmark:after {
@@ -202,8 +244,8 @@ const toggleFavorite = (todoId) => {
 }
 .form-select:focus {
   outline: none;
-  border-color: #3182ce;
-  box-shadow: 0 0 0 1px #3182ce;
+  border-color: #519945;
+  box-shadow: 0 0 0 1px #519945;
 }
 
 .form-input {
@@ -216,8 +258,8 @@ const toggleFavorite = (todoId) => {
 }
 .form-input:focus {
   outline: none;
-  border-color: #3182ce;
-  box-shadow: 0 0 0 1px #3182ce;
+  border-color: #519945;
+  box-shadow: 0 0 0 1px #519945;
 }
 
 .btn-favorite {
