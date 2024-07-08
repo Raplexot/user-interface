@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="login-wrapper flex justify-center items-center h-full w-full">
     <form @submit.prevent="handleLogin" class="login-form w-1/4">

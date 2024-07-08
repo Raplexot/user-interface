@@ -1,63 +1,24 @@
 <template>
   <div class="dashboard" v-if="user">
     <h1 class="text-white text-xl font-bold">User Dashboard</h1>
-    <div class="user-info my-4 p-4 bg-white rounded shadow-md">
-      <div class="flex justify-between my-2">
-        <span class="user-data-definition">Name:</span>
-        <p class="user-data">{{ user.name }}</p>
-      </div>
-      <div class="flex justify-between my-2">
-        <span class="user-data-definition">Email:</span>
-        <p class="user-data">{{ user.email }}</p>
-      </div>
-      <div class="flex justify-between my-2">
-        <span class="user-data-definition">Phone:</span>
-        <p class="user-data">{{ user.phone }}</p>
-      </div>
-    </div>
+    <UserData :name="user.name" :email="user.email" :phone="user.phone"/>
     <CreateTodo @todo-added="addTodoToList" />
-    <div>
-      <h2 class="text-white text-xl font-bold">Todo List</h2>
-      <div class="flex gap-4 justify-center my-4">
-        <select v-model="statusFilter" class="form-select">
-          <option value="all">All</option>
-          <option value="completed">Completed</option>
-          <option value="uncompleted">Uncompleted</option>
-        </select>
-        <select v-model="userIdFilter" class="form-select">
-          <option value="all">All Users</option>
-          <option v-for="userId in userIds" :key="userId" :value="userId">{{ userId }}</option>
-        </select>
-        <input
-          type="text"
-          v-model="searchTerm"
-          placeholder="Search by title"
-          class="form-input"
-        />
-      </div>
-      <ul class="custom-scrollbar bg-white p-4 rounded overflow-y-scroll" style="max-height: 400px;">
-        <li v-for="todo in filteredTodos" :key="todo.id" class="flex gap-2 mt-2 items-center" >
-          <label class="custom-checkbox">
-            <input type="checkbox" v-model="todo.completed" />
-            <span class="checkmark"></span>
-          </label>
-          <span>{{ todo.title }}</span>
-          <button @click="toggleFavorite(todo.id)" class="ml-auto btn-favorite">
-            <StarIcon :fill="isFavorite(todo.id) ? '#FF8D24' : 'rgb(0,0,0,0)'" stroke="#FF8D24" stroke-width="1"/>
-          </button>
-        </li>
-      </ul>
-    </div>
+    <TodoList
+      :todos="todos"
+      :favorite-todos="favoriteTodos"
+      @toggle-favorite="toggleFavorite"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { useRoute, useRouter } from 'vue-router'
+import { Router, useRoute, useRouter } from 'vue-router'
 import CreateTodo from '../singles/CreateTodo.vue'
-import StarIcon from '../icons/StarIcon.vue'
 import useHandleError from '../../composables/useHandleError'
+import UserData from '../reusable/UserData.vue'
+import TodoList from '../reusable/TodoList.vue'
 
 interface User {
   id: number;
@@ -74,13 +35,11 @@ interface Todo {
 }
 
 const route = useRoute()
-const router = useRouter()
+const router: Router = useRouter()
 
 const user = ref<User | null>(null)
 const todos = ref<Todo[]>([])
-const statusFilter = ref('all')
-const userIdFilter = ref('all')
-const searchTerm = ref('')
+
 const favoriteTodos = ref<number[]>([])
 
 const fetchUserData = async (userId: string) => {
@@ -120,20 +79,6 @@ const addTodoToList = (todo: Todo) => {
   todos.value.push(todo)
 }
 
-const userIds = computed(() => {
-  return Array.from(new Set(todos.value.map(todo => todo.userId)))
-})
-
-const filteredTodos = computed(() => {
-  return todos.value.filter(todo => {
-    return (
-      (statusFilter.value === 'all' || (statusFilter.value === 'completed' && todo.completed) || (statusFilter.value === 'uncompleted' && !todo.completed)) &&
-        (userIdFilter.value === 'all' || todo.userId === parseInt(userIdFilter.value)) &&
-        todo.title.toLowerCase().includes(searchTerm.value.toLowerCase())
-    )
-  })
-})
-
 const isFavorite = (todoId: number) => {
   return favoriteTodos.value.includes(todoId)
 }
@@ -149,88 +94,11 @@ const toggleFavorite = (todoId: number) => {
 </script>
 
 <style scoped>
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #519945 #F5F5F5;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #F5F5F5;
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #519945;
-  border-radius: 10px;
-  border: 2px solid #F5F5F5;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #519945;
-}
 
 .dashboard {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.custom-checkbox {
-  display: inline-block;
-  position: relative;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-.custom-checkbox input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
-}
-
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 1.5rem;
-  width: 1.5rem;
-  background-color: #eee;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s;
-}
-
-.custom-checkbox input:checked ~ .checkmark {
-  background-color: #519945;
-}
-
-.checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-.custom-checkbox input:checked ~ .checkmark:after {
-  display: block;
-}
-
-.custom-checkbox .checkmark:after {
-  left: 0.55rem;
-  top: 0.45rem;
-  width: 0.35rem;
-  height: 0.55rem;
-  border: solid white;
-  border-width: 0 0.2rem 0.2rem 0;
-  transform: rotate(45deg);
 }
 
 .form-select {

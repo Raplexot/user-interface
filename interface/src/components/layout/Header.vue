@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
     <header class="header text-white p-4 flex items-center justify-center">
       <!-- <h1>My App Header</h1> -->
